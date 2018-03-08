@@ -7,9 +7,11 @@ import java.text.DecimalFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import br.com.edilsonjustiniano.machine.learning.characters.classifier.MachineLearningClassifier;
 import br.com.edilsonjustiniano.machine.learning.characters.extractor.CharacteristicExtractor;
 import br.com.edilsonjustiniano.machine.learning.characters.view.CharacteristicExtractorView;
 import weka.classifiers.bayes.NaiveBayes;
+import weka.classifiers.trees.J48;
 import weka.core.DenseInstance;
 import weka.core.Instance;
 import weka.core.Instances;
@@ -29,6 +31,7 @@ public class CharacteristicExtractorController {
 	private CharacteristicExtractorView characteristicExtractorView;
 	private CharacteristicExtractor characteristicExtractor;
 	private Instances instances;
+	private MachineLearningClassifier machineLearningClassifier;
 
 	private float[] imageCharacteristic = null;
 
@@ -42,6 +45,7 @@ public class CharacteristicExtractorController {
 			characteristicExtractorView.sendMessage(
 					"I'm so sorry... but we are not able to continue with our app at this moment.\nPlease contact me in order to fix it as soon as possible");
 		}
+		machineLearningClassifier = new MachineLearningClassifier();
 	}
 
 	public void init() {
@@ -100,9 +104,10 @@ public class CharacteristicExtractorController {
 		case CLASSIFY_IMAGE_OPTION: {
 			try {
 				loadWekaBase();
-				naiveBayesClassification();
+				classifyByNaiveBayes();
+				classifyByTreeDecision();
 			} catch (Exception e) {
-				// TODO Auto-generated catch block
+				log.debug("Fail to classify the image", e);
 				e.printStackTrace();
 			}
 			break;
@@ -144,26 +149,16 @@ public class CharacteristicExtractorController {
 		instances.setClassIndex(instances.numAttributes() - 1);
 	}
 
-	private void naiveBayesClassification() throws Exception {
+	private void classifyByNaiveBayes() throws Exception {
 		NaiveBayes naiveBayes = new NaiveBayes();
-
-		// Build the table of probabilities
-		naiveBayes.buildClassifier(instances);
-
-		// create a new instance (register)
-		Instance register = new DenseInstance(instances.numAttributes());
-
-		// set the reference to the database loaded previously
-		register.setDataset(instances);
-
-		for (int i = 0; i < 6; i++) {
-			register.setValue(i, imageCharacteristic[i]);
-		}
-
-		DecimalFormat df = new DecimalFormat("#,###.0000");
-		double result[] = naiveBayes.distributionForInstance(register);
-		System.out.println("Bart: " + df.format(result[0]) + " Homer: " + df.format(result[1]));
-
+		System.out.println("Classification by Naive Bayes:\n");
+		machineLearningClassifier.classify(naiveBayes, instances, imageCharacteristic);
+	}
+	
+	private void classifyByTreeDecision() throws Exception {
+		J48 tree = new J48();
+		System.out.println("Classification by Trees:\n");
+		machineLearningClassifier.classify(tree, instances, imageCharacteristic);
 	}
 
 }
